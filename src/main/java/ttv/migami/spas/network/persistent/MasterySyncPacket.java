@@ -1,9 +1,10 @@
 package ttv.migami.spas.network.persistent;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -32,13 +33,16 @@ public class MasterySyncPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            Player player = Minecraft.getInstance().player;
-            if (player != null) {
-                player.getPersistentData().putInt(effectLocation + "_MasteryExperience", masteryExperience);
-                player.getPersistentData().putInt(effectLocation + "_MasteryLevel", masteryLevel);
-            }
-        });
+        ctx.get().enqueueWork(this::handleClient);
         ctx.get().setPacketHandled(true);
     }
+
+	@OnlyIn(Dist.CLIENT) // if you port to a later version onlyin stops working - you will need to change this impl
+	private void handleClient() {
+		Player player = net.minecraft.client.Minecraft.getInstance().player;
+		if (player != null) {
+			player.getPersistentData().putInt(effectLocation + "_MasteryExperience", masteryExperience);
+			player.getPersistentData().putInt(effectLocation + "_MasteryLevel", masteryLevel);
+		}
+	}
 }
